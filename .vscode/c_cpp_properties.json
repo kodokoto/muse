@@ -4,7 +4,8 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/vcpkg/installed/x64-osx/include/"
+                "${workspaceFolder}/vcpkg/installed/x64-osx/include/",
+                "/usr/local/opt/llvm@12/lib"
             ],
             "defines": [],
             "macFrameworkPath": [
