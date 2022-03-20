@@ -10,7 +10,7 @@ muse, a static, compiled language that features type inference, multiple dispatc
 - [ ] Smart linter that helps with type checking and memory management errors.
 - [ ] Syntax highlighter for IDE and documentation
 - [ ] Documentation
-- [ ] `mux`: a jsx-like html inspired sub-syntax that allows for simple decalarative GUI programming for web dev.
+- [ ] `mux`: a jsx-like html inspired sub-syntax that provides markdown for simple decalarative GUI programming.
 
 # Syntax
 
