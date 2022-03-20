@@ -57,10 +57,10 @@ Functions can be declared both imperatively and declaratively (lambdas).
 
 ```
 <Arguments>             ::= <Identifier> <TypeDef>? 
-<Prototype>             ::= <Identifier>(<Arguments>*)
+<Prototype>             ::= <Identifier>(<Arguments>*) (: <Type>)?
 <StatementBlock>        ::= INDENT <Statement>* DEDENT
-<FunctionDef>           ::= <Prototype> <TypeDef>? = <Expression> 
-                          | <Prototype> (: <Type>)? <StatementBlock>
+<FunctionDef>           ::= <Prototype> = <Expression> 
+                          | <Prototype> <StatementBlock>
 ```
 
 
