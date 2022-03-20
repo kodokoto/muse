@@ -49,8 +49,9 @@ private:
         return true;
     };
 
-    void consume(int repetitions = 1)
+    std::string consume(int repetitions = 1)
     {
+        std::string res = this->current_token.value;
         for (int i = 0; i<repetitions; i++)
         {
             if (this->current_token.type != TokenType::EoF)
@@ -59,6 +60,7 @@ private:
                 this->current_token = this->tokens[this->index];
             }
         }
+        return res;
     };
 
     void check_and_consume(TokenType expected_token_type)
@@ -70,9 +72,28 @@ private:
         this->consume();
     };
 
-    int check_precedence();
+    int check_precedence()
+    {
+        try 
+        {
+            return this->precedence_map[this->current_token.value];
+        } 
+        catch (std::out_of_range& const e)
+        {
+            return -1;
+        }
+    };
 
     bool check_if_func_def();
+
+    bool check_if_list_comp();
+
+    bool check_if_generator();
+
+    Span current_span()
+    {
+        return Span(this->current_token.pointer, this->current_token.pointer);
+    };
 
     // Statements
 
@@ -221,11 +242,11 @@ private:
     {
         LineColumn span_start = this->current_token.pointer;
         consume();
-        BooleanExpression conditional = parse_boolean_expression();
+        Expression conditional = parse_expression();
         check_and_consume(TokenType::EoL);
         StatementBlock ifBlock = parse_statement_block();
         LineColumn span_end = this->current_token.pointer;
-        StatementBlock elseBlock = {{}, Span(this->current_token.pointer, this->current_token.pointer)};
+        StatementBlock elseBlock = {{}, current_span()};
 
         if (lookahead({TokenType::ELSE, TokenType::IF}))
         {
@@ -248,7 +269,7 @@ private:
         LineColumn span_start = this->current_token.pointer;
         consume();
 
-        BooleanExpression conditional = parse_boolean_expression();
+        Expression conditional = parse_expression();
         check_and_consume(TokenType::EoL);
         StatementBlock block = parse_statement_block();
         LineColumn span_end = this->current_token.pointer;
@@ -292,30 +313,239 @@ private:
 
     // Expressions
 
-    Expression parse_expression();
+    Expression parse_expression()
+    {
+        Expression lhs = parse_unary();
+        return parse_binary_expression(0, lhs);
+    };
 
-    Expression parse_primary();
+    Expression parse_primary()
+    {
+        if (lookahead({TokenType::ID, TokenType::RPAREN}))
+        {
+            return parse_function_call();
+        }
+        else if (lookahead({TokenType::ID, TokenType::PERIOD}))
+        {
+            return parse_attribute_reference();
+        }
+        else if (lookahead({TokenType::RPAREN}))
+        {
+            return parse_parenthesis();
+        }
+        else if (lookahead({TokenType::RSQUARE}))
+        {
+            return parse_iterable();
+        }
+        else if (lookahead({TokenType::NUMBER}))
+        {
+            return parse_numeric_literal();
+        }
+        else if (lookahead({TokenType::STRING}))
+        {
+            return parse_string_literal();
+        }
+        else if (lookahead({TokenType::BOOL}))
+        {
+            return parse_boolean_literal();
+        }
+        else 
+        {
+            throw "Error";
+        }
+    };
 
-    Expression parse_unary();
+    Expression parse_unary()
+    {
+        // this function is for unary operators
+        return parse_primary();
+    };
 
-    Expression parse_parenthesis();
+    Expression parse_binary_expression(int precedence, Expression lhs)
+    {
+        int current_precedence = check_precedence();
+        while(current_precedence >= precedence)
+        {
+            LineColumn span_start = current_token.pointer;
+            current_precedence = check_precedence();
+            TokenType op = this->current_token.type;
+            consume();
+            Expression rhs = parse_unary();
+            int next_precedence = check_precedence();
+            if (current_precedence < next_precedence)
+            {
+                rhs = parse_binary_expression(current_precedence + 1, rhs);
+            }
+            LineColumn span_end = current_token.pointer;
+            lhs = BinaryExpression(lhs, rhs, op, Span(span_start, span_end));
+        }
 
-    FunctionCall parse_function_call();
+        return lhs;
+    };
 
-    BinaryExpression parse_binary_expression();
 
-    BooleanExpression parse_boolean_expression();
+    Expression parse_parenthesis()
+    {
+        consume();
+        Expression expression = parse_expression();
+        check_and_consume(TokenType::RPAREN);
+        return expression;
+    };
 
-    ListComprehension parse_list_comprehension();
+    FunctionCall parse_function_call()
+    {
+        LineColumn span_start = this->current_token.pointer;
+        std::string name = this->current_token.value;
+        check_and_consume(TokenType::LPAREN);
+        std::vector<Expression> args = {};
+        while(!lookahead({TokenType::RPAREN}))
+        {
+            args.push_back(parse_expression());
+            if (!lookahead({TokenType::COMMA}))
+            {
+                break;
+            }
+        }
+        check_and_consume(TokenType::RPAREN);
+        LineColumn span_end = this->current_token.pointer;
 
-    Generator parse_generator();
+        return FunctionCall(name, args, Span(span_start, span_end));
+    };
 
-    Iterable parse_iterable();
+    ListComprehension parse_list_comprehension()
+    {
+        LineColumn span_start = this->current_token.pointer;
+        consume();
+        Expression result = parse_expression();
+        check_and_consume(TokenType::FOR);
+        std::vector<Identifier> ids = {};
+        while(!lookahead({TokenType::IN}))
+        {
+            ids.push_back(parse_identifier());
+            if (lookahead({TokenType::COMMA}))
+            {
+                consume();
+            }
+            else 
+            {
+                break;
+            }
+        }
+        check_and_consume(TokenType::IN);
+        Value iterable = {{}};
+
+        if (lookahead({TokenType::LSQUARE}))
+        {
+            iterable = parse_iterable();
+        } 
+        else 
+        {
+            iterable = parse_identifier();
+        }
+
+        Expression filter = BooleanLiteral(true, current_span());
+        if (lookahead({TokenType::IF}))
+        {
+            filter = parse_expression();
+        }
+        check_and_consume(TokenType::RSQUARE);
+        LineColumn span_end = this->current_token.pointer;
+        return ListComprehension(result, ids, iterable, filter, Span(span_start, span_end));
+    };
+
+    Generator parse_generator()
+    {
+        LineColumn span_start = this->current_token.pointer;
+        consume();
+        Expression start = parse_expression();
+        Expression step = NumericLiteral(1, current_span());
+        if (lookahead({TokenType::COMMA}))
+        {
+            step = parse_expression();
+        }
+        check_and_consume(TokenType::PERIOD);
+        check_and_consume(TokenType::PERIOD);
+
+        Expression stop = parse_expression();
+        check_and_consume(TokenType::RPAREN);
+        LineColumn span_end = this->current_token.pointer;
+
+        return Generator(start, step, stop, Span(span_start, span_end));
+    };
+
+    Iterable parse_iterable()
+    {
+        if (check_if_list_comp())
+        {
+            parse_list_comprehension();
+        }
+        else if (check_if_generator())
+        {
+            parse_generator();
+        }
+        
+    };
 
     Identifier parse_identifier()
     {
-        Identifier id = Identifier(this->current_token.value, Span(this->current_token.pointer, this->current_token.pointer));
+        Identifier id = Identifier(this->current_token.value, current_span());
         check_and_consume(TokenType::ID);
         return id;
     };
+
+    Slice parse_iterable_slice()
+    {
+        ;
+    };
+
+    Subscription parse_iterable_subscription()
+    {
+        LineColumn span_start = this->current_token.pointer;
+        Identifier id = Identifier(this->current_token.value, current_span());
+        consume(2);
+
+        Expression index = parse_expression();
+        check_and_consume(TokenType::RSQUARE);
+
+        LineColumn span_end = this->current_token.pointer;
+        return Subscription(id, index, Span(span_start, span_end));
+    };
+
+    Value parse_attribute_reference()
+    {
+        LineColumn span_start = this->current_token.pointer;
+        Identifier object = Identifier(this->current_token.value, current_span());
+        consume();
+        if (lookahead({TokenType::PERIOD}))
+        {
+            consume();
+            Value reference = parse_attribute_reference();
+            LineColumn span_end = this->current_token.pointer;
+            return AttributeReference(object, reference, Span(span_start, span_end)); // span here is broken
+        }
+        return object;
+    };
+
+    NumericLiteral parse_numeric_literal()
+    {
+        return NumericLiteral(std::stod(consume()), current_span());
+    };
+
+    BooleanLiteral parse_boolean_literal()
+    {
+        return BooleanLiteral(consume()=="true" ? true : false, current_span());
+    };
+
+    StringLiteral parse_string_literal()
+    {
+        return StringLiteral(consume(), current_span());
+    };
+
+    List parse_list();
+
+
+
+
+
+
 };
