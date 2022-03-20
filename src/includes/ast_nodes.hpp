@@ -22,6 +22,8 @@ class Program: public Node
         Program(std::vector<Statement> program, Span span): program(program), Node(span) {};
 };
 
+// Statements
+
 class Statement : public Node
 {
     public:
@@ -72,10 +74,10 @@ class ForLoop : public Statement
 
 class WhileLoop : public Statement
 {
-    BooleanExpression condition;
+    Expression condition;
     StatementBlock block;
     public:
-        WhileLoop(BooleanExpression condition, StatementBlock block, Span span) : condition(condition), block(block), Statement(span) {};
+        WhileLoop(Expression condition, StatementBlock block, Span span) : condition(condition), block(block), Statement(span) {};
 };
 
 class Assignment : public Statement
@@ -90,11 +92,11 @@ class Assignment : public Statement
 
 class IfStatement : public Statement
 {
-    BooleanExpression conditional;
+    Expression conditional;
     StatementBlock ifBlock;
     StatementBlock elseBlock;
     public:
-        IfStatement(BooleanExpression conditional, StatementBlock ifBlock, StatementBlock elseBlock, Span span) : conditional(conditional), ifBlock(ifBlock), elseBlock(elseBlock), Statement(span) {};
+        IfStatement(Expression conditional, StatementBlock ifBlock, StatementBlock elseBlock, Span span) : conditional(conditional), ifBlock(ifBlock), elseBlock(elseBlock), Statement(span) {};
 };
 
 class Expression : public Statement
@@ -106,40 +108,14 @@ class Expression : public Statement
 
 };
 
+// Values
+
 class Value : public Expression
 {
     public: 
         Value(Span span) : Expression(span) {};
         virtual ~Value() {}
 };
-
-class Iterable : public Value
-{
-    public:
-        Iterable(Span span) : Value(span) {};
-};
-
-class Set : public Iterable
-{
-    std::vector<double> Elem;
-    TypeDef Type;
-    public: 
-        Set(std::vector<double> elem, TypeDef type, Span span) : Elem(elem), Type(type), Iterable(span) {};
-        llvm::Value *codegen();
-};   
-
-class Generator : public Iterable
-{
-    Value start;
-    Value step;
-    Value stop;
-    public:
-         Generator(Value start, Value step, Value stop, Span span) : start(start), stop(stop), step(step), Iterable(span) {};
-         llvm::Value *codegen();
-};
-
-
-
 
 class NumericLiteral : public Value
 {
@@ -157,21 +133,90 @@ class BooleanLiteral: public Value
         llvm::Value *codegen();
 };
 
-class StringLiteral: public Value
+class StringLiteral: public Iterable
 {
     std::string value;
     public:
-        StringLiteral(std::string value, Span span) : value(value), Value(span) {};
+        StringLiteral(std::string value, Span span) : value(value), Iterable(span) {};
         llvm::Value *codegen();
 };
 
-class Identifier: public Value
+class Identifier : public Value
 {
     std::string value;
     public:
         Identifier(std::string value, Span span) : value(value), Value(span) {};
         llvm::Value *codegen();
 };
+
+class Subscription : public Value
+{
+    Identifier id;
+    Expression index;
+    
+    public:
+        Subscription(Identifier id, Expression index, Span span) : id(id), index(index), Value(span) {};
+        llvm::Value *codegen();
+};
+
+class AttributeReference : public Value
+{
+    Identifier object;
+    Value attribute;
+
+    public:
+        AttributeReference(Identifier object, Value attribute, Span span) : object(object), attribute(attribute), Value(span) {};
+        llvm::Value *codegen();
+};
+
+// iterables
+
+class Iterable : public Value
+{
+    public:
+        Iterable(Span span) : Value(span) {};
+};
+
+class Slice : public Iterable
+{
+    Identifier id;
+    Expression start;
+    Expression stop;
+    public:
+        Slice(Identifier id, Expression start, Expression stop, Span span) : id(id), start(start), stop(stop), Iterable(span) {};
+        llvm::Value *codegen();
+};
+
+class List : public Iterable
+{
+   std::vector<std::string> elements;
+   public:
+        List(std::vector<std::string> elements, Span span) : elements(elements), Iterable(span) {};
+};
+
+class Set : public Iterable
+{
+    std::vector<double> Elem;
+    TypeDef Type;
+    public: 
+        Set(std::vector<double> elem, TypeDef type, Span span) : Elem(elem), Type(type), Iterable(span) {};
+        llvm::Value *codegen();
+};  
+
+class Generator : public Iterable
+{
+    Expression start;
+    Expression step;
+    Expression stop;
+    public:
+         Generator(Expression start, Expression step, Expression stop, Span span) : start(start), stop(stop), step(step), Iterable(span) {};
+         llvm::Value *codegen();
+};
+
+
+
+// Expressions
+
 
 class BinaryExpression: public Expression
 {
@@ -191,7 +236,13 @@ class BooleanExpression: public BinaryExpression
 
 class ListComprehension: public Expression
 {
-
+    Expression body;
+    std::vector<Identifier> ids;
+    Value iterable;
+    Expression filter;
+    public:
+        ListComprehension(Expression body, std::vector<Identifier> ids, Value iterable, Expression filter, Span span) : body(body), ids(ids), iterable(iterable), filter(filter), Expression(span) {};
+        llvm::Value *codegen();
 };
 
 class FunctionCall: public Expression
