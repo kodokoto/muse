@@ -3,6 +3,8 @@
 #include <string.h>
 #include <iostream>
 
+
+
 class Lexer
 {
     std::vector<Token> tokens;
@@ -81,9 +83,14 @@ public:
             std::tie(tmp_tokens, level) = this->tokenize(line, level);
             this->tokens.insert(this->tokens.end(), tmp_tokens.begin(), tmp_tokens.end());
         }
+        this->tokens.push_back({"",{tokens[-1].pointer.line, 0}, TokenType::EoF});
+        return this->tokens;
     }
 
 private:
+
+    // advances the lexer to the next charachter 
+
     void advance()
     {
         if (this->cursor < this->line.size())
@@ -98,6 +105,7 @@ private:
         }
     }
 
+    
     Token collect_identidier()
     {
         std::string value = "";
@@ -218,7 +226,7 @@ private:
                 this->advance();
             };
         };
-        tokens.push_back({"", {this->lineNumber, this->columnNumber}, TokenType::EOL});
+        tokens.push_back({"", {this->lineNumber, this->columnNumber}, TokenType::EoL});
         return {tokens, level};
     };
 };
