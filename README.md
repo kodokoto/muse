@@ -3,7 +3,7 @@
 muse, a static, compiled language that features type inference, multiple dispatch and a rust-like memory model, with a readable pythonic syntax.
 
 ## Language plan
-- [ ] Define language syntax and semmantics. 
+- [x] Define language syntax and semmantics. 
 - [ ] Lexer and Parser written in C++
 - [ ] Multiple MLIR dialects as pre-transpile targets to LLVM, suporting the tensor dialect natively.
 - [ ] Robust CLI that supports WebAssembly as a target as well as app bundling.
