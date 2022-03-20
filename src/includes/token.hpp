@@ -18,7 +18,8 @@ enum class TokenType
     COMMENT,
     INDENT,
     DEDENT,
-    EOL,
+    EoL,
+    EoF,
 
     // Literals
 
