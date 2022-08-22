@@ -1,14 +1,10 @@
 #pragma once
 
+#ifndef TOKEN_HPP
+#define TOKEN_HPP
+
 #include <string>
 #include "LineColumn.hpp"
-
-struct Token
-{
-    std::string value;
-    LineColumn pointer;
-    TokenType type;
-};
 
 enum class TokenType
 {
@@ -79,4 +75,14 @@ enum class TokenType
     RSQUARE,
     LCURLY,
     RCURLY,
+    ELIPSIS
 };
+
+struct Token
+{
+    std::string value;
+    LineColumn pointer;
+    TokenType type;
+};
+
+#endif 

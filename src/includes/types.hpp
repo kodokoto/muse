@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TYPES_HPP
+#define TYPES_HPP
+
 
 enum class TypeDef
 {
@@ -10,3 +13,6 @@ enum class TypeDef
     Tvoid,
     Tuser,
 };
+
+
+#endif
