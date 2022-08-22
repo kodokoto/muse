@@ -3,6 +3,8 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
+#include <map>
+
 
 enum class TypeDef
 {
@@ -13,6 +15,8 @@ enum class TypeDef
     Tvoid,
     Tuser,
 };
+
+std::map<std::string, TypeDef> type_env;
 
 
 #endif
