@@ -5,8 +5,10 @@ muse, a static, compiled language that features type inference, multiple dispatc
 ## Language plan
 - [x] Define language syntax and semmantics. 
 - [-] Lexer and Parser written in C++
+- [ ] local type inference and type checking
+- [ ] data race lifetime checking
 - [ ] Multiple MLIR dialects as pre-transpile targets to LLVM, suporting the tensor dialect natively.
-- [ ] Robust CLI that supports WebAssembly as a target as well as app bundling.
+- [ ] Robust CLI that supports WebAssembly as a target and modern app bundling features.
 - [ ] Smart linter that helps with type checking and memory management errors.
 - [ ] Syntax highlighter for IDE and documentation
 - [ ] Documentation
@@ -179,14 +181,14 @@ class Cat
     
     hungry: bool = true
 
-    constructor(name, age)
+    Cat(name, age)
         this.name = name
         this.age = age
         while hungry
             print("meow")
     
     feed()
-        this.hunger = true
+        this.hungry = false
 
 ```        
 
