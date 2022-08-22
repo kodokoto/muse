@@ -4,7 +4,7 @@ muse, a static, compiled language that features type inference, multiple dispatc
 
 ## Language plan
 - [x] Define language syntax and semmantics. 
-- [-] Lexer and Parser written in C++
+- [x] Lexer and Parser written in C++
 - [ ] local type inference and type checking
 - [ ] data race lifetime checking
 - [ ] Multiple MLIR dialects as pre-transpile targets to LLVM, suporting the tensor dialect natively.
