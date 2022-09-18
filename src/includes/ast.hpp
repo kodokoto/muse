@@ -6,10 +6,21 @@
 #include "token.hpp"
 #include "span.hpp"
 #include <vector>
-// #include "llvm/IR/BasicBlock.h"
-
 // base classes
 #include "types.hpp"
+
+// #include "llvm/ADT/APFloat.h"
+// #include "llvm/ADT/STLExtras.h"
+// #include "llvm/IR/BasicBlock.h"
+// #include "llvm/IR/Constants.h"
+// #include "llvm/IR/DerivedTypes.h"
+// #include "llvm/IR/Function.h"
+// #include "llvm/IR/IRBuilder.h"
+// #include "llvm/IR/LLVMContext.h"
+// #include "llvm/IR/Module.h"
+// #include "llvm/IR/Type.h"
+// #include "llvm/IR/Verifier.h"
+
 
 class JSONSerializable
 {
@@ -107,7 +118,7 @@ class FunctionPrototype : public Statement
     public:
         FunctionPrototype(std::string name, std::vector<std::unique_ptr<Parameter>> params, std::string return_type, Span span) : name(name), params(std::move(params)), return_type(return_type), Statement(span) {};
         std::string toJSON(int lvl) override;
-        // llvm::Value *codegen() override;
+        // llvm::Function *codegen();
 };
 
 class FunctionDefenition : public Statement
@@ -117,7 +128,7 @@ class FunctionDefenition : public Statement
     public:
         FunctionDefenition(std::unique_ptr<FunctionPrototype> prototype, std::unique_ptr<Statement> body, Span span) : prototype(std::move(prototype)), body(std::move(body)), Statement(span) {};
         std::string toJSON(int lvl) override;
-        // llvm::Value *codegen() override;
+        // llvm::Function *codegen();
 };
 
 class ReturnStatement : public Statement

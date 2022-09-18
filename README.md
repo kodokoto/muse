@@ -2,6 +2,10 @@
 
 muse, a static, compiled language that features type inference, multiple dispatch and a rust-like memory model, with a readable pythonic syntax.
 
+
+# usage
+
+
 ## Language plan
 - [x] Define language syntax and semmantics. 
 - [x] Lexer and Parser written in C++
